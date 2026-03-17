@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package shipment;
+
+option go_package = "vektor-shipment/shared/proto/shipment";
+
+import "google/protobuf/timestamp.proto";
+
+// ShipmentService defines the gRPC service for shipment management
+service ShipmentService {
+  // CreateShipment creates a new shipment with initial "pending" status
+  rpc CreateShipment(CreateShipmentRequest) returns (CreateShipmentResponse);
+  
+  // GetShipment retrieves shipment details by reference number
+  rpc GetShipment(GetShipmentRequest) returns (GetShipmentResponse);
+  
+  // AddStatusEvent adds a new status change event to the shipment
+  rpc AddStatusEvent(AddStatusEventRequest) returns (AddStatusEventResponse);
+  
+  // GetShipmentHistory retrieves all status change events for a shipment
+  rpc GetShipmentHistory(GetShipmentHistoryRequest) returns (GetShipmentHistoryResponse);
+}
+
+// ShipmentStatus defines the lifecycle states of a shipment
+enum ShipmentStatus {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_PENDING = 1; // Initial status - shipment created
+  STATUS_PICKED_UP = 2; // Driver picked up the shipment
+  STATUS_IN_TRANSIT = 3; // Shipment is on the way
+  STATUS_DELIVERED = 4; // Shipment successfully delivered
+  STATUS_CANCELLED = 5; // Shipment cancelled
+  STATUS_FAILED = 6; // Delivery failed
+}
+
+// Shipment represents the main shipment entity
+message Shipment {
+  string id = 1; // Unique identifier (UUID)
+  string reference_number = 2; // Human-readable reference
+  string origin = 3; // Origin address
+  string destination = 4; // Destination address
+  ShipmentStatus current_status = 5; // Current shipment status
+  DriverDetails driver = 6; // Driver information
+  UnitDetails unit = 7; // Vehicle/unit information
+  double shipment_amount = 8; // Total shipment cost
+  double driver_revenue = 9; // Driver's revenue
+  google.protobuf.Timestamp created_at = 10; // Creation timestamp
+  google.protobuf.Timestamp updated_at = 11; // Last update timestamp
+}
+
+// DriverDetails contains driver information
+message DriverDetails {
+  string driver_id = 1; // Driver unique identifier
+  string driver_name = 2; // Driver full name
+  string driver_phone = 3; // Driver contact number
+}
+
+// UnitDetails contains vehicle/unit information
+message UnitDetails {
+  string unit_id = 1; // Vehicle/unit unique identifier
+  string unit_type = 2; // Type of vehicle (truck, van, etc.)
+  string plate_number = 3; // Vehicle license plate
+}
+
+// StatusEvent represents a shipment status change event
+message StatusEvent {
+  string id = 1; // Event unique identifier
+  string shipment_id = 2; // Reference to shipment
+  ShipmentStatus status = 3; // New status
+  string description = 4; // Optional event description
+  string location = 5; // Location where event occurred
+  google.protobuf.Timestamp occurred_at = 6; // When the event occurred
+  string recorded_by = 7; // Who recorded the event (user/system ID)
+}
+
+// CreateShipmentRequest - request to create a new shipment
+message CreateShipmentRequest {
+  string reference_number = 1;
+  string origin = 2;
+  string destination = 3;
+  DriverDetails driver = 4;
+  UnitDetails unit = 5;
+  double shipment_amount = 6;
+  double driver_revenue = 7;
+}
+
+// CreateShipmentResponse - response after creating a shipment
+message CreateShipmentResponse {
+  Shipment shipment = 1;
+  string message = 2;
+}
+
+// GetShipmentRequest - request to get shipment by reference number
+message GetShipmentRequest {
+  string reference_number = 1;
+}
+
+// GetShipmentResponse - response with shipment details
+message GetShipmentResponse {
+  Shipment shipment = 1;
+}
+
+// AddStatusEventRequest - request to add a status change event
+message AddStatusEventRequest {
+  string reference_number = 1;
+  ShipmentStatus new_status = 2;
+  string description = 3;
+  string location = 4;
+  string recorded_by = 5;
+}
+
+// AddStatusEventResponse - response after adding status event
+message AddStatusEventResponse {
+  StatusEvent event = 1;
+  Shipment updated_shipment = 2;
+  string message = 3;
+}
+
+// GetShipmentHistoryRequest - request to get all events for a shipment
+message GetShipmentHistoryRequest {
+  string reference_number = 1;
+}
+
+// GetShipmentHistoryResponse - response with list of status events
+message GetShipmentHistoryResponse {
+  repeated StatusEvent events = 1;
+}
